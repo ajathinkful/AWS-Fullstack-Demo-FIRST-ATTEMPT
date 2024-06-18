@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Amplify } from "aws-amplify";
-import { GraphQLAPI as API } from "@aws-amplify/api-graphql";
+import { generateClient } from "aws-amplify/api";
 import {
   Button,
   Flex,
@@ -21,16 +21,18 @@ import {
 Amplify.configure({
   API: {
     GraphQL: {
-      endpoint: 'https://gu6dmxte2nh5jhraxivx5yo4cu.appsync-api.us-east-1.amazonaws.com/graphql',
-      region: 'us-east-1',
-      defaultAuthMode: 'apiKey',
-      apiKey: 'da2-y5v3u3fnq5hzhecyallqhecwky'
-    }
-  }
+      endpoint:
+        "https://gu6dmxte2nh5jhraxivx5yo4cu.appsync-api.us-east-1.amazonaws.com/graphql",
+      region: "us-east-1",
+      defaultAuthMode: "apiKey",
+      apiKey: "da2-y5v3u3fnq5hzhecyallqhecwky",
+    },
+  },
 });
 
 const App = ({ signOut }) => {
   const [notes, setNotes] = useState([]);
+  const client = generateClient();
 
   useEffect(() => {
     fetchNotes();
@@ -38,7 +40,7 @@ const App = ({ signOut }) => {
 
   async function fetchNotes() {
     try {
-      const apiData = await API.graphql({ query: listNotes });
+      const apiData = await client.graphql({ query: listNotes });
       const notesFromAPI = apiData.data.listNotes.items;
       setNotes(notesFromAPI);
     } catch (error) {
@@ -55,10 +57,12 @@ const App = ({ signOut }) => {
     };
 
     try {
-      await API.graphql({
+      const newNote = await client.graphql({
         query: createNoteMutation,
         variables: { input: data },
       });
+
+      console.log("New Note:", newNote);
       fetchNotes();
       event.target.reset();
     } catch (error) {
@@ -71,10 +75,12 @@ const App = ({ signOut }) => {
     setNotes(newNotes);
 
     try {
-      await API.graphql({
+      const result = await client.graphql({
         query: deleteNoteMutation,
         variables: { input: { id } },
       });
+
+      console.log("GraphQL API Result:", result);
     } catch (error) {
       console.error("Error deleting note:", error);
     }
